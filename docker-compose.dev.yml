@@ -1,0 +1,25 @@
+version: '3.8'
+services:
+  mast-integration:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mast-integration
+    restart: always
+    ports:
+      - '8083:8083'
+    environment:
+        APP_ENV: "development"
+        DB_HOST: postgresdb
+        DB_USER: what
+        DB_PASSWORD: "what1234"
+        DB_PORT: 5432
+        DB_NAME: "mast"
+        APP_PORT: "8083"
+        MOBSF_API_URL: "http://mast-engine:8000"
+        MOBSF_API_KEY: "2fd726979ec0f9696769a6fe5eb72045b8ab42543b02aaa2125dee15cf9b69bc"
+    networks:
+      - compose_default
+networks:
+  compose_default:
+    external: true
