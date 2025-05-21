@@ -8,6 +8,7 @@ import (
 	"mast-integrator/app/dbo/entity"
 	"mast-integrator/app/dbo/repository"
 	"mast-integrator/app/helper"
+	"mast-integrator/app/shareVar"
 )
 
 type StaticScan interface {
@@ -27,15 +28,25 @@ type StaticScanAbstract struct {
 	stdLog         *helper.StandartLog
 }
 
-func GetStaticScan(osType string) StaticScan {
+func NewStaticScanAbstract(repo repository.ScanRepository, repoApkVersion repository.APKVersionRepository, mobsfApi api.MobSFAPI, db *gorm.DB) *StaticScanAbstract {
+	return &StaticScanAbstract{
+		repo:           repo,
+		repoApkVersion: repoApkVersion,
+		mobsfApi:       mobsfApi,
+		db:             db,
+		stdLog:         helper.NewStandardLog(shareVar.Scan, shareVar.Service),
+	}
+}
+
+func GetStaticScan(osType string, abstract *StaticScanAbstract) StaticScan {
 	if osType == "android" {
-		return NewScanAPKStatic()
+		return NewScanAPKStatic(*abstract)
 	} else {
 		return NewScanIOSStatic()
 	}
 }
 
-func (s *StaticScanAbstract) processError(ctx *gin.Context, apkVersion entity.APKVersion, statusMessage string) {
+func (s StaticScanAbstract) processError(ctx *gin.Context, apkVersion entity.APKVersion, statusMessage string) {
 	apkVersion.StaticScanStatus = 2
 	apkVersion.StaticStatusMessage = statusMessage
 	s.repoApkVersion.Update(ctx, s.db, apkVersion)

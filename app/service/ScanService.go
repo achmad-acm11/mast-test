@@ -4,7 +4,6 @@ import (
 	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"mast-integrator/app/dbo/api"
 	"mast-integrator/app/dbo/entity"
@@ -43,12 +42,14 @@ func NewScanService(repo repository.ScanRepository, repoApkVersion repository.AP
 
 func (s ScanServiceImpl) TriggerScanData(ctx *gin.Context, apkVersionId int, scanType string) {
 	apkVersion, scan := s.initScanData(ctx, apkVersionId, scanType)
+	//fmt.Printf("apkVersion:%v, scan:%v\n", apkVersion, scan)
+	abstract := staticScan.NewStaticScanAbstract(s.repo, s.repoApkVersion, s.mobsfApi, s.db)
 	if scanType == "static" {
 		param := staticScan.StaticScanProcessParam{
 			ApkVersion: apkVersion,
 			Scan:       scan,
 		}
-		go staticScan.GetStaticScan(apkVersion.Project.OsType).ScanProcess(ctx, param)
+		go staticScan.GetStaticScan(apkVersion.Project.OsType, abstract).ScanProcess(ctx, param)
 		//if  == "android" {
 		//	go s.AsyncScanAPK(ctx, apkVersion, scan)
 		//} else {
@@ -85,24 +86,24 @@ func (s ScanServiceImpl) initScanData(ctx *gin.Context, apkVersionId int, scanTy
 		panic(exception.NewConflictError(errors.New("apk version on scan process").Error()))
 	}
 
-	if scanType == "static" && apkVersion.StaticScanStatus != 2 {
-		panic(exception.NewBadRequestError(errors.New("only failed static scan can be re-scan").Error()))
-	}
+	//if scanType == "static" && apkVersion.StaticScanStatus != 2 {
+	//	panic(exception.NewBadRequestError(errors.New("only failed static scan can be re-scan").Error()))
+	//}
+	//
+	//if scanType == "static" && apkVersion.StaticScanStatus == 2 {
+	//	apkVersion.StaticScanStatus = 1
+	//	isErrorStatus = true
+	//}
 
-	if scanType == "static" && apkVersion.StaticScanStatus == 2 {
-		apkVersion.StaticScanStatus = 1
-		isErrorStatus = true
-	}
-
-	s.repoApkVersion.Update(ctx, s.db, apkVersion)
-	fields := logrus.Fields{
-		"message":        "Scan APK Version started",
-		"project_id":     apkVersion.ProjectId,
-		"apk_version_id": apkVersion.Id,
-		"package_name":   apkVersion.PackageName,
-		"version_name":   apkVersion.VersionName,
-	}
-	s.stdLog.InfoFunction(fields)
+	//s.repoApkVersion.Update(ctx, s.db, apkVersion)
+	//fields := logrus.Fields{
+	//	"message":        "Scan APK Version started",
+	//	"project_id":     apkVersion.ProjectId,
+	//	"apk_version_id": apkVersion.Id,
+	//	"package_name":   apkVersion.PackageName,
+	//	"version_name":   apkVersion.VersionName,
+	//}
+	//s.stdLog.InfoFunction(fields)
 
 	currentScanData := s.getLastScanDataByCurrentVersion(ctx, apkVersion.Id, isErrorStatus)
 
@@ -117,11 +118,11 @@ func (s ScanServiceImpl) getLastScanDataByCurrentVersion(ctx *gin.Context, apkVe
 		if lastScan.Id != 0 {
 			scanVersion = lastScan.ScanVersion + 1
 		}
-		scanNew := entity.Scan{
+		scan := entity.Scan{
 			APKVersionId: apkVersionId,
 			ScanVersion:  scanVersion,
 		}
-		s.repo.Create(ctx, s.db, scanNew)
+		scanNew := s.repo.Create(ctx, s.db, scan)
 		return scanNew
 	} else {
 		if lastScan.Id == 0 {

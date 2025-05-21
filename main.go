@@ -47,6 +47,7 @@ func main() {
 
 	api = route.ProjectRoute(api, db, validator)
 	api = route.APKVersionRoute(api, db, validator)
+	api = route.ScanRoute(api, db, validator)
 
 	err := router.Run(":" + app_port)
 	if err != nil {

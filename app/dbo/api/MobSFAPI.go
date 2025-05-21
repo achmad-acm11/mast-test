@@ -48,7 +48,7 @@ func NewMobSFAPI() *MobSFAPIImpl {
 }
 
 func (m MobSFAPIImpl) Upload(filePath string) *response.UploadMobSFResponse {
-	responseApi := &response.UploadMobSFResponse{}
+	var responseApi *response.UploadMobSFResponse
 
 	file, _ := os.Open(filePath)
 	defer file.Close()
@@ -62,7 +62,7 @@ func (m MobSFAPIImpl) Upload(filePath string) *response.UploadMobSFResponse {
 	httpReq, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/api/v1/upload", m.url), body)
 	helper.ErrorHandler(err)
 	httpReq.Header.Add("content-type", writer.FormDataContentType())
-	httpReq.Header.Add("Authorization", helper.MapTokenAuthorizationHeader(m.key))
+	httpReq.Header.Add("Authorization", m.key)
 
 	client := &http.Client{}
 	response, err := client.Do(httpReq)
@@ -96,8 +96,9 @@ func (m MobSFAPIImpl) Upload(filePath string) *response.UploadMobSFResponse {
 }
 
 func (m MobSFAPIImpl) ScanStatic(filename string, hash string, scanType string) *response.ScanStaticResultResponse {
-	scanStaticResultResponse := &response.ScanStaticResultResponse{}
+	apkResponseRaw := &response.StaticAnalysisResultRaw{}
 
+	fmt.Printf("Scan Type: %v, FileName: %v\n", scanType, filename)
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 	writer.WriteField("scan_type", scanType)
@@ -109,28 +110,31 @@ func (m MobSFAPIImpl) ScanStatic(filename string, hash string, scanType string) 
 	httpReq, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/api/v1/scan", m.url), body)
 	helper.ErrorHandler(err)
 	httpReq.Header.Add("content-type", writer.FormDataContentType())
-	httpReq.Header.Add("Authorization", helper.MapTokenAuthorizationHeader(m.key))
+	httpReq.Header.Add("Authorization", m.key)
 
 	client := &http.Client{}
-	response, err := client.Do(httpReq)
+	res, err := client.Do(httpReq)
 	helper.ErrorHandler(err)
 
-	bodyByte, err := ioutil.ReadAll(response.Body)
+	bodyByte, err := ioutil.ReadAll(res.Body)
 	helper.ErrorHandler(err)
-
-	m.swicherResponseStatusAndPanic(response, bodyByte)
+	fmt.Printf("Response: %v\n", res.StatusCode)
+	m.swicherResponseStatusAndPanic(res, bodyByte)
 
 	fmt.Printf("%+v\n", string(bodyByte))
 
-	json.Unmarshal(bodyByte, &scanStaticResultResponse)
+	json.Unmarshal(bodyByte, &apkResponseRaw)
 
-	return scanStaticResultResponse
+	return &response.ScanStaticResultResponse{
+		APK: *apkResponseRaw,
+	}
 }
 
 func (m MobSFAPIImpl) DownloadIcon(apkVersionId int, hashPath string) string {
 	var filePathResponse string
 	httpReq, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/download/%s-icon.png", m.url, hashPath), nil)
 	helper.ErrorHandler(err)
+	httpReq.Header.Add("Authorization", m.key)
 
 	client := &http.Client{}
 	response, err := client.Do(httpReq)
@@ -164,7 +168,8 @@ func (m MobSFAPIImpl) logResponseNotOK(response *http.Response, bodyByte []byte)
 	res := make(map[string]interface{})
 
 	res["status_code"] = response.StatusCode
-	res["body"] = bodyByte
+	res["body"] = string(bodyByte)
+	fmt.Printf("response: %s, status code: %s", string(bodyByte), res["status_code"])
 	m.stdLog.WarningFunction(res)
 }
 

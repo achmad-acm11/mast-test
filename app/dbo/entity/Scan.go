@@ -13,7 +13,7 @@ type Scan struct {
 	/* Static Information */
 	//security Score information
 	SecurityScore                    int    `gorm:"column:security_score;type:int"`
-	RiskRatingGrade                  string `gorm:"column:risk_rating_grade;type:int"`
+	RiskRatingGrade                  string `gorm:"column:risk_rating_grade;type:varchar(255)"`
 	PrivacyRiskCount                 int    `gorm:"column:privacy_risk_count;type:int"`
 	HighSeverityDistributionCount    int    `gorm:"column:high_severity_distribution_count;type:int"`
 	WarningSeverityDistributionCount int    `gorm:"column:warning_severity_distribution_count;type:int"`

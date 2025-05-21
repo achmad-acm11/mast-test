@@ -46,13 +46,13 @@ func (a *APKVersionController) GetApkVersionDetailByIdHandler(ctx *gin.Context) 
 func (a *APKVersionController) GetApkVersionsByProjectHandler(ctx *gin.Context) {
 	var projectId int
 	var err error
-	if ctx.Query("mobile_project_id") == "" {
-		panic(exception.NewBadRequestError(errors.New("query parameter mobile_project_id is required").Error()))
+	if ctx.Query("project_id") == "" {
+		panic(exception.NewBadRequestError(errors.New("query parameter project_id is required").Error()))
 		return
 	} else {
-		projectId, err = strconv.Atoi(ctx.Query("mobile_project_id"))
+		projectId, err = strconv.Atoi(ctx.Query("project_id"))
 		if err != nil {
-			panic(exception.NewBadRequestError(errors.New("query parameter mobile_project_id is must be integer").Error()))
+			panic(exception.NewBadRequestError(errors.New("query parameter project_id is must be integer").Error()))
 			return
 		}
 	}

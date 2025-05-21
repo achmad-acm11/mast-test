@@ -55,7 +55,7 @@ func (s ScanRepositoryImpl) GetLastByAPKVersionId(ctx *gin.Context, db *gorm.DB,
 
 	err := db.WithContext(ctx).
 		Where("apk_version_id = ?", apkVersionId).
-		Last(&scan).Error
+		Order("id desc").Find(&scan).Error
 	helper.ErrorHandler(err)
 
 	return scan

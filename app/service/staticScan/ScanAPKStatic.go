@@ -1,6 +1,7 @@
 package staticScan
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"mast-integrator/app/dbo/entity"
 	"mast-integrator/app/dto/response"
@@ -12,11 +13,15 @@ type ScanAPKStatic struct {
 	abstract StaticScanAbstract
 }
 
-func NewScanAPKStatic() *ScanAPKStatic {
-	return &ScanAPKStatic{}
+func NewScanAPKStatic(abstract StaticScanAbstract) *ScanAPKStatic {
+	return &ScanAPKStatic{
+		abstract: abstract,
+	}
 }
 
 func (s *ScanAPKStatic) ScanProcess(ctx *gin.Context, param StaticScanProcessParam) {
+	//fmt.Printf("%+v\n", param)
+
 	apkVersion := param.ApkVersion
 	scan := param.Scan
 
@@ -26,13 +31,18 @@ func (s *ScanAPKStatic) ScanProcess(ctx *gin.Context, param StaticScanProcessPar
 			return
 		}
 	}()
+	//fmt.Printf("Sini")
 	resultRaw := s.abstract.mobsfApi.ScanStatic(apkVersion.Filename, apkVersion.HashPath, apkVersion.Extension)
+
+	//fmt.Printf("%+v\n", resultRaw)
 
 	folderPath := "apk_icon/"
 	if _, err := os.Stat(folderPath); os.IsNotExist(err) {
 		os.Mkdir(folderPath, 0755)
 	}
 	filePathResponse := s.abstract.mobsfApi.DownloadIcon(apkVersion.Id, apkVersion.HashPath)
+
+	fmt.Printf("%+v\n", filePathResponse)
 
 	var dataResult entity.ResultData
 	StaticAnalysisResultRaw := resultRaw.APK
@@ -42,6 +52,8 @@ func (s *ScanAPKStatic) ScanProcess(ctx *gin.Context, param StaticScanProcessPar
 	StaticAnalysisResult.ScanId = scan.Id
 	StaticAnalysisResult.TypeResult = "android"
 	dataResult.APK = StaticAnalysisResult
+
+	//fmt.Printf("%+v\n", StaticAnalysisResult)
 	//global.Repositories.StaticAnalysisResultRepository.Create(DataResult, 1)
 
 	//update scan status

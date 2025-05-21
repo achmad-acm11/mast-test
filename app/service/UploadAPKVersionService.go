@@ -4,7 +4,6 @@ import (
 	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"log"
 	"mast-integrator/app/dbo/entity"
 	"mast-integrator/app/dto/request"
 	"mast-integrator/app/dto/response"
@@ -54,8 +53,6 @@ func (a APKVersionServiceImpl) UploadAPKData(ctx *gin.Context, req request.Uploa
 		deleteFilePathUploadDir(filePath, uploadDir, project, extension)
 		throwException(exception.BadRequestError{}, "error get manifest "+project.OsType+","+errParse.Error())
 	}
-	
-	log.Fatal(0)
 
 	var checkApkVersion entity.APKVersion
 	checkLatest := a.repo.GetOneByProjectId(ctx, a.db, apkVersionRequest.ProjectId)
